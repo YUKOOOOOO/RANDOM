@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>姓名配对助手</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap');
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #f3f4f6;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        /* Custom scrollbar for textareas */
+        textarea::-webkit-scrollbar {
+            width: 8px;
+        }
+        textarea::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+        textarea::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        textarea::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        .pair-card {
+            transition: all 0.2s ease;
+        }
+        .pair-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="text-slate-800 min-h-screen flex flex-col items-center py-10 px-4">
+
+    <!-- Main Container -->
+    <div class="w-full max-w-5xl">
+        
+        <!-- Header -->
+        <div class="text-center mb-10">
+            <h1 class="text-3xl md:text-4xl font-bold text-slate-800 mb-2 tracking-tight">
+                <span class="text-indigo-600">随机</span>配对助手
+            </h1>
+            <p class="text-slate-500">在下方输入两组姓名，点击按钮将两组人员完全打乱并随机配对。</p>
+        </div>
+
+        <!-- Input Section -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            
+            <!-- Group A Input -->
+            <div class="glass-panel rounded-2xl p-6 shadow-sm border border-slate-200 flex flex-col h-80">
+                <div class="flex items-center justify-between mb-3">
+                    <label class="font-bold text-indigo-600 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                        规培医师 (A)
+                    </label>
+                    <span class="text-xs font-medium bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full" id="countA">0 人</span>
+                </div>
+                <textarea 
+                    id="inputA" 
+                    class="w-full flex-1 p-4 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none resize-none transition-all text-sm leading-relaxed"
+                    placeholder="例如：&#10;张三&#10;李四&#10;王五"></textarea>
+            </div>
+
+            <!-- Group B Input -->
+            <div class="glass-panel rounded-2xl p-6 shadow-sm border border-slate-200 flex flex-col h-80">
+                <div class="flex items-center justify-between mb-3">
+                    <label class="font-bold text-pink-600 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                        带教老师 (B)
+                    </label>
+                    <span class="text-xs font-medium bg-pink-100 text-pink-700 px-2 py-1 rounded-full" id="countB">0 人</span>
+                </div>
+                <textarea 
+                    id="inputB" 
+                    class="w-full flex-1 p-4 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none resize-none transition-all text-sm leading-relaxed"
+                    placeholder="例如：&#10;赵六&#10;孙七&#10;周八"></textarea>
+            </div>
+        </div>
+
+        <!-- NEW: Match Button Section -->
+        <div class="flex justify-center mb-10">
+            <button onclick="processNames()" class="group relative flex items-center gap-3 px-10 py-4 bg-indigo-600 text-white rounded-full font-bold text-lg shadow-lg shadow-indigo-200 hover:bg-indigo-700 hover:shadow-xl hover:shadow-indigo-300 hover:-translate-y-1 transition-all duration-200 active:scale-95 focus:outline-none focus:ring-4 focus:ring-indigo-100">
+                <!-- Shuffle Icon -->
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>
+                随机配对
+            </button>
+        </div>
+
+        <!-- Action Bar -->
+        <div class="flex flex-wrap justify-between items-center mb-6 px-2 gap-y-4">
+            <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-400"><path d="M9 17H7A5 5 0 0 1 7 7h2"></path><path d="M15 7h2a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-2"></path><line x1="8" y1="12" x2="16" y2="12"></line></svg>
+                配对结果
+            </h2>
+            <div class="flex flex-wrap gap-2 justify-end">
+                 <button onclick="clearInputs()" class="px-3 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 hover:text-slate-800 transition-colors focus:outline-none focus:ring-2 focus:ring-slate-200">
+                    清空输入
+                </button>
+                 <button onclick="clearResults()" class="px-3 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 hover:text-slate-800 transition-colors focus:outline-none focus:ring-2 focus:ring-slate-200">
+                    清空结果
+                </button>
+                
+                <!-- NEW: Arrow Format Copy Button -->
+                <button onclick="copyResultsArrow()" class="flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 active:scale-95">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                    复制 (→)
+                </button>
+
+                <button onclick="copyResults()" class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 active:scale-95">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                    复制详情
+                </button>
+            </div>
+        </div>
+
+        <!-- Output Section -->
+        <div id="resultContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-20">
+            <!-- Empty State -->
+            <div id="emptyState" class="col-span-full py-12 text-center text-slate-400 border-2 border-dashed border-slate-200 rounded-xl bg-slate-50/50">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="mx-auto mb-3 text-slate-300"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                <p>请输入姓名，点击“随机配对”</p>
+            </div>
+        </div>
+
+        <!-- Toast Notification -->
+        <div id="toast" class="fixed bottom-6 right-6 transform translate-y-20 opacity-0 transition-all duration-300 z-50">
+            <div class="bg-slate-800 text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-3">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <span id="toastMsg">操作成功</span>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const inputA = document.getElementById('inputA');
+        const inputB = document.getElementById('inputB');
+        const resultContainer = document.getElementById('resultContainer');
+        const countAEl = document.getElementById('countA');
+        const countBEl = document.getElementById('countB');
+        const emptyState = document.getElementById('emptyState');
+
+        // Store current match results for copying
+        let currentMatches = [];
+
+        // Update just the counts (not results)
+        function updateCounts() {
+            const namesA = inputA.value.trim().split(/\s+/).filter(n => n.length > 0);
+            const namesB = inputB.value.trim().split(/\s+/).filter(n => n.length > 0);
+            countAEl.textContent = `${namesA.length} 人`;
+            countBEl.textContent = `${namesB.length} 人`;
+        }
+
+        // Fisher-Yates Shuffle Algorithm
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        // Main logic to process names and render results
+        function processNames() {
+            // Split by newlines or whitespace, filter out empty strings
+            let namesA = inputA.value.trim().split(/\s+/).filter(n => n.length > 0);
+            let namesB = inputB.value.trim().split(/\s+/).filter(n => n.length > 0);
+
+            // Update Counts
+            countAEl.textContent = `${namesA.length} 人`;
+            countBEl.textContent = `${namesB.length} 人`;
+
+            // Reset current matches and UI
+            resultContainer.innerHTML = '';
+            currentMatches = [];
+
+            if (namesA.length === 0 && namesB.length === 0) {
+                resultContainer.appendChild(emptyState);
+                showToast("请输入姓名后点击配对", true);
+                return;
+            }
+
+            // --- RANDOMIZE ---
+            // Shuffle both arrays
+            namesA = shuffleArray(namesA);
+            namesB = shuffleArray(namesB);
+
+            // Determine loop length (longest list)
+            const maxLen = Math.max(namesA.length, namesB.length);
+
+            for (let i = 0; i < maxLen; i++) {
+                const nameA = namesA[i] || null;
+                const nameB = namesB[i] || null;
+                
+                // Save for copy functionality
+                currentMatches.push({ A: nameA, B: nameB });
+
+                const card = document.createElement('div');
+                card.className = 'pair-card glass-panel p-4 rounded-xl border border-slate-200 flex items-center justify-between gap-2 opacity-0 animate-fade-in';
+                card.style.animationDelay = `${i * 0.05}s`;
+                
+                // Name A logic
+                const leftSide = document.createElement('div');
+                leftSide.className = 'flex items-center gap-3 flex-1 min-w-0';
+                
+                const avatarA = document.createElement('div');
+                avatarA.className = `w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${nameA ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-100 text-slate-300'}`;
+                avatarA.innerText = i + 1;
+                
+                const textA = document.createElement('span');
+                textA.className = `font-medium truncate ${nameA ? 'text-slate-800' : 'text-slate-300 italic'}`;
+                textA.innerText = nameA || "等待中...";
+
+                leftSide.appendChild(avatarA);
+                leftSide.appendChild(textA);
+
+                // Connector Arrow (with shuffle hint)
+                const arrow = document.createElement('div');
+                arrow.className = 'text-slate-300 shrink-0';
+                arrow.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5"></path><path d="M4 20L21 3"></path><path d="M21 16v5h-5"></path><path d="M15 15l-5 5l-4-4"></path><path d="M4 4l5 5"></path></svg>`;
+
+                // Name B logic
+                const rightSide = document.createElement('div');
+                rightSide.className = 'flex items-center justify-end gap-3 flex-1 min-w-0';
+                
+                const textB = document.createElement('span');
+                textB.className = `font-medium truncate text-right ${nameB ? 'text-slate-800' : 'text-slate-300 italic'}`;
+                textB.innerText = nameB || "等待中...";
+                
+                const avatarB = document.createElement('div');
+                avatarB.className = `w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${nameB ? 'bg-pink-100 text-pink-600' : 'bg-slate-100 text-slate-300'}`;
+                avatarB.innerText = nameB ? (nameB.slice(0,1)) : "?";
+
+                rightSide.appendChild(textB);
+                rightSide.appendChild(avatarB);
+
+                // Assemble Card
+                card.appendChild(leftSide);
+                card.appendChild(arrow);
+                card.appendChild(rightSide);
+                
+                resultContainer.appendChild(card);
+            }
+            showToast("已完成随机配对！");
+        }
+
+        function copyResults() {
+            // Check stored matches, not inputs
+            if (currentMatches.length === 0) {
+                showToast("请先点击随机配对生成结果", true);
+                return;
+            }
+
+            let resultText = "";
+            currentMatches.forEach(pair => {
+                const nameA = pair.A || "---";
+                const nameB = pair.B || "---";
+                resultText += `${nameA} \t<->\t ${nameB}\n`;
+            });
+
+            // Copy using textarea hack for maximum compatibility
+            const el = document.createElement('textarea');
+            el.value = resultText;
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand('copy');
+            document.body.removeChild(el);
+            
+            showToast(`已复制 ${currentMatches.length} 组随机配对结果`);
+        }
+
+        // NEW: Function for arrow format copying
+        function copyResultsArrow() {
+            // Check stored matches, not inputs
+            if (currentMatches.length === 0) {
+                showToast("请先点击随机配对生成结果", true);
+                return;
+            }
+
+            let resultText = "";
+            currentMatches.forEach(pair => {
+                const nameA = pair.A || "---";
+                const nameB = pair.B || "---";
+                resultText += `${nameA}→${nameB}\n`;
+            });
+
+            // Copy using textarea hack
+            const el = document.createElement('textarea');
+            el.value = resultText;
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand('copy');
+            document.body.removeChild(el);
+            
+            showToast(`已复制 ${currentMatches.length} 组 (箭头格式)`);
+        }
+
+        function clearInputs() {
+            inputA.value = '';
+            inputB.value = '';
+            updateCounts();
+            showToast("已清空输入框");
+        }
+
+        function clearResults() {
+            currentMatches = []; // Clear stored matches
+            resultContainer.innerHTML = '';
+            resultContainer.appendChild(emptyState);
+            showToast("已清空配对结果");
+        }
+
+        function showToast(message, isError = false) {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toastMsg');
+            
+            toastMsg.innerText = message;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            
+            // Auto hide
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+        // Event Listeners for updating counts ONLY
+        inputA.addEventListener('input', updateCounts);
+        inputB.addEventListener('input', updateCounts);
+
+        // Initial setup samples (optional, can be empty)
+        // inputA.value = "张三\n李四\n王五";
+        // inputB.value = "赵六\n孙七";
+        // updateCounts();
+    </script>
+</body>
+</html>
